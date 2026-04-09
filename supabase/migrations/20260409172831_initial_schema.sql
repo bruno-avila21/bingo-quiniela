@@ -114,6 +114,16 @@ create policy "card_marks_own_read" on card_marks for select
     )
   );
 
+-- Payments: users see payments for their own cards; admin sees all
+create policy "payments_own_read" on payments for select
+  using (
+    exists (
+      select 1 from cards
+      where cards.id = payments.card_id
+        and (cards.user_id = auth.uid() or auth.jwt()->>'role' = 'admin')
+    )
+  );
+
 -- Admin-only write policies (service role bypasses RLS)
 create policy "admin_all_config" on config
   using (auth.jwt()->>'role' = 'admin');

@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
   // Protect /admin — require admin role
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
-    const meta = user.user_metadata as { role?: string }
+    const meta = user.app_metadata as { role?: string }
     if (meta?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url))
     }

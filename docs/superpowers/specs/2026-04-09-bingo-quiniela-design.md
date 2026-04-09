@@ -37,7 +37,7 @@ Plataforma web donde los usuarios compran cartones de bingo que se validan seman
 | Sábado | Cierre — sin sorteo |
 
 ### Premios
-- **Línea** (primera fila completa): 10% del pozo total. El juego continúa.
+- **Línea** (cualquier fila horizontal completa): 10% del pozo total. El juego continúa.
 - **Bingo completo** (cartón lleno): 90% del pozo total. El juego cierra.
 - Si hay múltiples ganadores del mismo premio: reparto igualitario.
 - Si nadie completa el cartón al finalizar la semana: el pozo acumula al siguiente juego (rollover).

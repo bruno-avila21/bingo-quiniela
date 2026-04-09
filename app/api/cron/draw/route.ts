@@ -56,7 +56,6 @@ export async function GET(request: Request) {
     }
 
     if (!numbers.length) {
-      // @ts-ignore — lib/email/resend is created in Task 13
       const { sendAdminAlert } = await import('@/lib/email/resend')
       await sendAdminAlert(`Scraper falló para ${source}: ${lastError}`)
       continue
@@ -126,7 +125,6 @@ export async function GET(request: Request) {
 
   if (!gameData) return NextResponse.json({ ok: true })
 
-  // @ts-ignore — lib/email/resend is created in Task 13
   const { sendWinnerEmail } = await import('@/lib/email/resend')
   const lineWinners: string[] = []
   const fullWinners: string[] = []

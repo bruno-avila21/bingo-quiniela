@@ -1,6 +1,7 @@
 'use client'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function RegisterPage() {
   const supabase = createClient()
@@ -42,13 +43,16 @@ export default function RegisterPage() {
             className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2" required />
           <input type="password" placeholder="Contraseña (mín. 6 caracteres)" value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2" required />
+            className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2" required minLength={6} />
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit"
             className="w-full bg-[#8b7355] text-white py-2 rounded-lg font-medium">
             Registrarme
           </button>
         </form>
+        <p className="mt-4 text-center text-sm text-[#8b7355]">
+          ¿Ya tenés cuenta? <Link href="/login" className="underline">Iniciá sesión</Link>
+        </p>
       </div>
     </main>
   )

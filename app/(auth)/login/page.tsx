@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -18,10 +19,11 @@ export default function LoginPage() {
   }
 
   async function handleGoogle() {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${location.origin}/auth/callback` },
     })
+    if (error) setError(error.message)
   }
 
   return (
@@ -52,7 +54,7 @@ export default function LoginPage() {
           Continuar con Google
         </button>
         <p className="mt-4 text-center text-sm text-[#8b7355]">
-          ¿No tenés cuenta? <a href="/registro" className="underline">Registrate</a>
+          ¿No tenés cuenta? <Link href="/registro" className="underline">Registrate</Link>
         </p>
       </div>
     </main>

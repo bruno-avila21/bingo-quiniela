@@ -27,6 +27,6 @@ export function checkWinners(card: BingoCard, marks: number[]): WinnerResult {
 // e.g. "7453" → 53 (last 2 digits, must be 1-90)
 export function extractQuinielaNumber(raw: string): number | null {
   const lastTwo = parseInt(raw.slice(-2), 10)
-  if (lastTwo >= 1 && lastTwo <= 90) return lastTwo
+  if (lastTwo >= 1 && lastTwo <= 98) return lastTwo
   return null
 }

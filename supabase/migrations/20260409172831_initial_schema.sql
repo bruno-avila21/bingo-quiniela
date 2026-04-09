@@ -81,7 +81,6 @@ create table config (
   commission_pct numeric not null default 20,
   cbu text,
   alias text,
-  mp_access_token text,
   updated_at timestamptz default now()
 );
 
@@ -126,4 +125,14 @@ create policy "payments_own_read" on payments for select
 
 -- Admin-only write policies (service role bypasses RLS)
 create policy "admin_all_config" on config
-  using (auth.jwt()->>'role' = 'admin');
+  for all
+  using (auth.jwt()->>'role' = 'admin')
+  with check (auth.jwt()->>'role' = 'admin');
+
+-- Indexes for foreign keys
+create index on cards(game_id);
+create index on cards(user_id);
+create index on payments(card_id);
+create index on winners(game_id);
+create index on card_marks(card_id);
+create index on drawn_numbers(game_id);

@@ -1,9 +1,6 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
-
 -- Games table
 create table games (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   week_start date not null,
   week_end date not null,
   status text not null default 'active'
@@ -17,7 +14,7 @@ create table games (
 
 -- Cards table
 create table cards (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   game_id uuid not null references games(id),
   user_id uuid references auth.users(id),
   user_email text not null,
@@ -31,7 +28,7 @@ create table cards (
 
 -- Payments table
 create table payments (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   card_id uuid not null references cards(id),
   method text not null check (method in ('mercadopago', 'transfer')),
   status text not null default 'pending'
@@ -45,7 +42,7 @@ create table payments (
 
 -- Drawn numbers table
 create table drawn_numbers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   game_id uuid not null references games(id),
   number integer not null check (number between 1 and 90),
   source text not null check (source in ('nacional', 'provincial')),
@@ -56,7 +53,7 @@ create table drawn_numbers (
 
 -- Card marks (numbers crossed off)
 create table card_marks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   card_id uuid not null references cards(id),
   number integer not null check (number between 1 and 90),
   unique(card_id, number)
@@ -64,7 +61,7 @@ create table card_marks (
 
 -- Winners table
 create table winners (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   card_id uuid not null references cards(id),
   game_id uuid not null references games(id),
   prize_type text not null check (prize_type in ('line', 'full')),

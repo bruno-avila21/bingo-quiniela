@@ -1,0 +1,18 @@
+name: Notify Central Wiki
+
+on:
+  push:
+    paths: ['README.md']
+    branches: [main, master]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger wiki sync
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.WIKI_SYNC_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/bruno-avila21/central-wiki/dispatches \
+            -d "{\"event_type\":\"readme-updated\",\"client_payload\":{\"repo\":\"${{ github.event.repository.name }}\"}}"

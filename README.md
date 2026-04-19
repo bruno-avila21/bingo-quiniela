@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
+title: Bingo Quiniela
+description: Juego de bingo/quiniela con Next.js 16, Supabase, MercadoPago y Resend
+---
 
-## Getting Started
+# Bingo Quiniela
 
-First, run the development server:
+Aplicación de bingo/quiniela interactivo. Compra de cartones con MercadoPago, sorteo
+automático scrapeando la quiniela nacional/provincial, validación de ganadores y
+notificaciones por email vía Resend.
+
+## Stack
+
+| Tecnología | Versión | Uso |
+|------------|---------|-----|
+| Next.js | 16.2 (App Router) | Framework |
+| React | 19 | UI |
+| TypeScript | 5 | Lenguaje |
+| Tailwind CSS | 4 | Estilos |
+| Supabase | 2.x | Auth + DB |
+| MercadoPago | 2.x | Pagos |
+| Resend | 6.x | Emails |
+| Vitest | 4.x | Tests |
+| Vercel | — | Deploy |
+
+## Correr localmente
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local
+# Completar variables de entorno
+npm run dev   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variables de entorno
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+MP_ACCESS_TOKEN=
+MP_WEBHOOK_SECRET=
+RESEND_API_KEY=
+CRON_SECRET=
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+ADMIN_EMAIL=
+QUINIELA_NACIONAL_URL=
+QUINIELA_PROVINCIAL_URL=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Módulos
 
-## Learn More
+- **Comprar**: flujo de compra de cartones con MercadoPago
+- **Mis cartones**: cartones del usuario con estado en tiempo real
+- **Sorteo**: scraping de quiniela nacional/provincial + validación automática
+- **Admin**: panel de gestión de partidas y ganadores
+- **Emails**: notificaciones con Resend (compra confirmada, ganador)
 
-To learn more about Next.js, take a look at the following resources:
+## Estructura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/
+  (auth)/         # login, registro
+  admin/          # panel admin
+  comprar/        # compra de cartones
+  mis-cartones/   # cartones del usuario
+  api/            # payments, cards, admin, cron
+components/       # bingo-card, buy-form, game-banner
+lib/
+  game/           # card-generator, scraper, validator (lógica pura + tests)
+  payments/       # MercadoPago
+  email/          # Resend
+  supabase/       # clientes SSR y browser
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+```bash
+npm run dev       # dev server
+npm run build     # build producción
+npm run test      # Vitest watch
+npm run test:run  # Vitest one-shot
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel — automático con push a `main`. Configurar variables de entorno en el dashboard.

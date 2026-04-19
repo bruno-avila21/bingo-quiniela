@@ -14,41 +14,53 @@ export function BuyForm({ gameId, cardPrice, cbu, alias }: {
   const [email, setEmail] = useState('')
   const [step, setStep] = useState<'form' | 'paying' | 'done'>('form')
   const [cards, setCards] = useState<{ id: string; numbers: number[] }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleBuy(e: React.FormEvent) {
     e.preventDefault()
+    setLoading(true)
+    setError('')
     const { data: { user } } = await supabase.auth.getUser()
 
-    const res = await fetch('/api/cards/buy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quantity,
-        email: user?.email ?? email,
-        userId: user?.id,
-        paymentMethod: method,
-        gameId,
-      }),
-    })
-    const data = await res.json()
-    setCards(data.cards)
-
-    if (method === 'mercadopago') {
-      const mpRes = await fetch('/api/payments/mercadopago/preference', {
+    try {
+      const res = await fetch('/api/cards/buy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cardIds: data.cards.map((c: { id: string }) => c.id),
           quantity,
-          unitPrice: cardPrice,
-          payerEmail: user?.email ?? email,
-          externalReference: data.cards.map((c: { id: string }) => c.id).join(','),
+          email: user?.email ?? email,
+          userId: user?.id,
+          paymentMethod: method,
+          gameId,
         }),
       })
-      const { initPoint } = await mpRes.json()
-      window.location.href = initPoint
-    } else {
-      setStep('paying')
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Error al crear los cartones'); setLoading(false); return }
+      setCards(data.cards)
+
+      if (method === 'mercadopago') {
+        const mpRes = await fetch('/api/payments/mercadopago/preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cardIds: data.cards.map((c: { id: string }) => c.id),
+            quantity,
+            unitPrice: cardPrice,
+            payerEmail: user?.email ?? email,
+            externalReference: data.cards.map((c: { id: string }) => c.id).join(','),
+          }),
+        })
+        const mpData = await mpRes.json()
+        if (!mpRes.ok) { setError(mpData.error ?? 'Error con Mercado Pago'); setLoading(false); return }
+        window.location.href = mpData.initPoint
+      } else {
+        setStep('paying')
+        setLoading(false)
+      }
+    } catch (err) {
+      setError('Error inesperado. Intentá de nuevo.')
+      setLoading(false)
     }
   }
 
@@ -76,7 +88,7 @@ export function BuyForm({ gameId, cardPrice, cbu, alias }: {
               await fetch('/api/payments/transfer', { method: 'POST', body: fd })
               setStep('done')
             }}
-            className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2"
+            className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2 text-gray-900"
           />
         </div>
       </div>
@@ -99,7 +111,7 @@ export function BuyForm({ gameId, cardPrice, cbu, alias }: {
         <label className="block text-sm font-medium text-[#5c4a2a] mb-1">Cantidad</label>
         <input type="number" min={1} max={100} value={quantity}
           onChange={e => setQuantity(+e.target.value)}
-          className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2" />
+          className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2 text-gray-900" />
         <p className="text-sm text-gray-500 mt-1">
           Total: ${(quantity * cardPrice).toLocaleString('es-AR')}
         </p>
@@ -122,11 +134,13 @@ export function BuyForm({ gameId, cardPrice, cbu, alias }: {
       </div>
       <input type="email" placeholder="Tu email" value={email}
         onChange={e => setEmail(e.target.value)}
-        className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2"
+        className="w-full border border-[#d4c5a9] rounded-lg px-3 py-2 text-gray-900"
         required />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
       <button type="submit"
-        className="w-full bg-[#8b7355] text-white py-3 rounded-xl font-bold">
-        Comprar
+        disabled={loading}
+        className="w-full bg-[#8b7355] text-white py-3 rounded-xl font-bold hover:bg-[#7a6349] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
+        {loading ? 'Procesando...' : 'Comprar'}
       </button>
     </form>
   )

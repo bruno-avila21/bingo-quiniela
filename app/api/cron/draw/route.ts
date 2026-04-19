@@ -90,25 +90,31 @@ export async function GET(request: Request) {
   }
 
   const cardIds = cards.map(c => c.id)
+
+  // 1. Validate pending marks that match tonight's drawn numbers
+  await supabase.from('card_marks')
+    .update({ validated: true })
+    .in('card_id', cardIds)
+    .in('number', drawnNumbers)
+    .eq('validated', false)
+
+  // 2. Insert validated marks for numbers on cards that weren't marked at all
   const { data: existingMarks } = await supabase
     .from('card_marks')
     .select('card_id, number')
     .in('card_id', cardIds)
+    .in('number', drawnNumbers)
 
-  const marksByCard = new Map<string, number[]>()
-  existingMarks?.forEach(m => {
-    if (!marksByCard.has(m.card_id)) marksByCard.set(m.card_id, [])
-    marksByCard.get(m.card_id)!.push(m.number)
-  })
+  const existingSet = new Set((existingMarks ?? []).map(m => `${m.card_id}:${m.number}`))
+  const newMarks: { card_id: string; number: number; validated: boolean }[] = []
 
-  const newMarks: { card_id: string; number: number }[] = []
   for (const card of cards) {
     for (const drawn of drawnNumbers) {
-      if ((card.numbers as number[]).includes(drawn)) {
-        const existing = marksByCard.get(card.id) ?? []
-        if (!existing.includes(drawn)) {
-          newMarks.push({ card_id: card.id, number: drawn })
-        }
+      if (
+        (card.numbers as number[]).includes(drawn) &&
+        !existingSet.has(`${card.id}:${drawn}`)
+      ) {
+        newMarks.push({ card_id: card.id, number: drawn, validated: true })
       }
     }
   }
@@ -117,13 +123,33 @@ export async function GET(request: Request) {
     await supabase.from('card_marks').insert(newMarks)
   }
 
+  // 3. Delete pending marks that don't match tonight's draw (wrong guesses)
+  await supabase.from('card_marks')
+    .delete()
+    .in('card_id', cardIds)
+    .not('number', 'in', `(${drawnNumbers.join(',')})`)
+    .eq('validated', false)
+
+  // Fetch all validated marks for winner detection
+  const { data: validatedMarks } = await supabase
+    .from('card_marks')
+    .select('card_id, number')
+    .in('card_id', cardIds)
+    .eq('validated', true)
+
+  const marksByCard = new Map<string, Set<number>>()
+  validatedMarks?.forEach(m => {
+    if (!marksByCard.has(m.card_id)) marksByCard.set(m.card_id, new Set())
+    marksByCard.get(m.card_id)!.add(m.number)
+  })
+
   const { data: gameData } = await supabase
     .from('games')
     .select('jackpot_amount, line_amount, status')
     .eq('id', game.id)
     .single()
 
-  if (!gameData) return NextResponse.json({ ok: true })
+  if (!gameData) return NextResponse.json({ ok: true, drawn: drawnNumbers })
 
   const { sendWinnerEmail } = await import('@/lib/email/resend')
   const lineWinners: string[] = []
@@ -131,26 +157,19 @@ export async function GET(request: Request) {
 
   // Detect full card winners
   for (const card of cards) {
-    const allMarks = [
-      ...(marksByCard.get(card.id) ?? []),
-      ...newMarks.filter(m => m.card_id === card.id).map(m => m.number),
-    ]
-    const hasFull = (card.numbers as number[]).every(n => allMarks.includes(n))
+    const cardMarks = marksByCard.get(card.id) ?? new Set()
+    const hasFull = (card.numbers as number[]).every(n => cardMarks.has(n))
     if (hasFull) fullWinners.push(card.id)
   }
 
   // Detect line winners only if game is still 'active'
   if (gameData.status === 'active') {
     for (const card of cards) {
-      const rows = card.rows as (number | null)[][]
-      if (!rows) continue
-      const allMarks = [
-        ...(marksByCard.get(card.id) ?? []),
-        ...newMarks.filter(m => m.card_id === card.id).map(m => m.number),
-      ]
-      const markSet = new Set(allMarks)
-      const hasLine = rows.some(row =>
-        row.filter((n): n is number => n !== null).every(n => markSet.has(n))
+      const cardRows = card.rows as (number | null)[][]
+      if (!cardRows) continue
+      const cardMarks = marksByCard.get(card.id) ?? new Set()
+      const hasLine = cardRows.some(row =>
+        row.filter((n): n is number => n !== null).every(n => cardMarks.has(n))
       )
       if (hasLine) lineWinners.push(card.id)
     }

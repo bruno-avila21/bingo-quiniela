@@ -29,18 +29,24 @@ export default async function MisCartonesPage() {
 
   const { data: allMarks } = await supabase
     .from('card_marks')
-    .select('card_id, number')
+    .select('card_id, number, validated')
     .in('card_id', (cards ?? []).map(c => c.id))
 
-  const marksByCard = new Map<string, number[]>()
+  const confirmedByCard = new Map<string, number[]>()
+  const pendingByCard = new Map<string, number[]>()
+
   allMarks?.forEach(m => {
-    if (!marksByCard.has(m.card_id)) marksByCard.set(m.card_id, [])
-    marksByCard.get(m.card_id)!.push(m.number)
+    const map = m.validated ? confirmedByCard : pendingByCard
+    if (!map.has(m.card_id)) map.set(m.card_id, [])
+    map.get(m.card_id)!.push(m.number)
   })
 
   return (
     <main className="min-h-screen bg-[#f5f0e8] p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-[#5c4a2a] mb-6">Mis cartones</h1>
+      <h1 className="text-2xl font-bold text-[#5c4a2a] mb-2">Mis cartones</h1>
+      <p className="text-sm text-[#8b7355] mb-6">
+        Hacé click en tus números para marcarlos. Cada noche se validan contra la quiniela.
+      </p>
       {!cards?.length && (
         <p className="text-[#8b7355]">No tenés cartones esta semana. <a href="/comprar" className="underline">Comprá uno</a>.</p>
       )}
@@ -53,7 +59,8 @@ export default async function MisCartonesPage() {
             <BingoCard
               cardId={card.id}
               rows={card.rows as (number | null)[][]}
-              initialMarks={marksByCard.get(card.id) ?? []}
+              initialConfirmed={confirmedByCard.get(card.id) ?? []}
+              initialPending={pendingByCard.get(card.id) ?? []}
               gameId={game.id}
             />
           </div>

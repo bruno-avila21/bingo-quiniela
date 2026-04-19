@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { TransferList } from '@/components/admin/transfer-list'
 
 export default async function PagosPage() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: pending } = await supabase
     .from('payments')
@@ -11,7 +11,7 @@ export default async function PagosPage() {
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
 
-  const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/sign/comprobantes`
+  const storageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/comprobantes`
 
   return (
     <div>

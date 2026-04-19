@@ -28,11 +28,6 @@ export async function createPreference(params: {
       }],
       payer: { email: params.payerEmail },
       external_reference: params.externalReference,
-      back_urls: {
-        success: `${process.env.NEXT_PUBLIC_BASE_URL}/comprar/exito`,
-        failure: `${process.env.NEXT_PUBLIC_BASE_URL}/comprar/error`,
-      },
-      auto_return: 'approved',
       notification_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/mercadopago/webhook`,
     },
   })
